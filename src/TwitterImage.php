@@ -1,28 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NotificationChannels\Twitter;
 
-class TwitterImage
+final class TwitterImage
 {
-    /** @var string */
-    private $imagePath;
+    private string $imagePath;
 
-    /**
-     * TwitterImage constructor.
-     *
-     * @param $imagePath
-     */
-    public function __construct($imagePath)
+    public function __construct(string $imagePath)
     {
         $this->imagePath = $imagePath;
     }
 
-    /**
-     * Get image path.
-     *
-     * @return string
-     */
-    public function getPath()
+    public function getPath(): string
     {
         return $this->imagePath;
     }

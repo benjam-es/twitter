@@ -1,18 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NotificationChannels\Twitter;
 
+use Abraham\TwitterOAuth\Response;
 use Abraham\TwitterOAuth\TwitterOAuth;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 use NotificationChannels\Twitter\Exceptions\CouldNotSendNotification;
 
-class TwitterChannel
+final class TwitterChannel
 {
-    /** @var TwitterOAuth */
-    protected $twitter;
+    protected TwitterOAuth $twitter;
 
-    /** @param TwitterOAuth $twitter */
     public function __construct(TwitterOAuth $twitter)
     {
         $this->twitter = $twitter;
@@ -21,19 +21,20 @@ class TwitterChannel
     /**
      * Send the given notification.
      *
-     * @param mixed $notifiable
-     * @param \Illuminate\Notifications\Notification $notification
      * @throws CouldNotSendNotification
      */
-    public function send($notifiable, Notification $notification)
+    public function send(mixed $notifiable, Notification $notification): Response
     {
         $this->changeTwitterSettingsIfNeeded($notifiable);
 
         $twitterMessage = $notification->toTwitter($notifiable);
         $twitterMessage = $this->addImagesIfGiven($twitterMessage);
 
-        $twitterApiResponse = $this->twitter->post($twitterMessage->getApiEndpoint(), $twitterMessage->getRequestBody($this->twitter),
-            $twitterMessage->isJsonRequest);
+        $twitterApiResponse = $this->twitter->post(
+            $twitterMessage->getApiEndpoint(),
+            $twitterMessage->getRequestBody($this->twitter),
+            $twitterMessage->isJsonRequest
+        );
 
         if ($this->twitter->getLastHttpCode() !== 200) {
             throw CouldNotSendNotification::serviceRespondsNotSuccessful($this->twitter->getLastBody());
@@ -44,24 +45,23 @@ class TwitterChannel
 
     /**
      * Use per user settings instead of default ones.
-     *
-     * @param Notifiable $notifiable
      */
-    private function changeTwitterSettingsIfNeeded($notifiable)
+    private function changeTwitterSettingsIfNeeded(mixed $notifiable): void
     {
         if (method_exists($notifiable, 'routeNotificationFor') && $twitterSettings = $notifiable->routeNotificationFor('twitter')) {
-            $this->twitter = new TwitterOAuth($twitterSettings[0], $twitterSettings[1], $twitterSettings[2],
-                $twitterSettings[3]);
+            $this->twitter = new TwitterOAuth(
+                $twitterSettings[0],
+                $twitterSettings[1],
+                $twitterSettings[2],
+                $twitterSettings[3]
+            );
         }
     }
 
     /**
      * If it is a status update message and images are provided, add them.
-     *
-     * @param $twitterMessage
-     * @return mixed
      */
-    private function addImagesIfGiven($twitterMessage)
+    private function addImagesIfGiven(mixed $twitterMessage): mixed
     {
         if (is_a($twitterMessage, TwitterStatusUpdate::class) && $twitterMessage->getImages()) {
             $this->twitter->setTimeouts(10, 15);
@@ -69,7 +69,7 @@ class TwitterChannel
             $twitterMessage->imageIds = collect($twitterMessage->getImages())->map(function (TwitterImage $image) {
                 $media = $this->twitter->upload('media/upload', ['media' => $image->getPath()]);
 
-                return $media->media_id_string;
+                return (object) $media->media_id_string;
             });
         }
 

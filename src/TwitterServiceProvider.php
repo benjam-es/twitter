@@ -1,16 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NotificationChannels\Twitter;
 
 use Abraham\TwitterOAuth\TwitterOAuth;
 use Illuminate\Support\ServiceProvider;
 
-class TwitterServiceProvider extends ServiceProvider
+final class TwitterServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap the application services.
      */
-    public function boot()
+    public function boot(): void
     {
         $this->app->when([TwitterChannel::class, TwitterDirectMessage::class])
             ->needs(TwitterOAuth::class)
